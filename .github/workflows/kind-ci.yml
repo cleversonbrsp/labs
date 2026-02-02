@@ -1,0 +1,24 @@
+# Lab 1: Valida o Kind local (cluster já existe)
+# Roda no self-hosted runner na máquina do Kind.
+
+name: Kind CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify cluster (Kind local)
+        run: |
+          kubectl cluster-info
+          kubectl get nodes -o wide
+          kubectl get ns

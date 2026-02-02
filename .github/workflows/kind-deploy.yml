@@ -1,0 +1,30 @@
+# Lab 2: Deploy no Kind local (cluster já existe)
+# Roda no self-hosted runner na máquina do Kind.
+
+name: Kind Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '02-deploy-app-kind/**'
+      - '.github/workflows/kind-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy app (nginx example)
+        run: kubectl apply -f 02-deploy-app-kind/manifests/nginx-deployment.yaml
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/nginx --timeout=120s
+
+      - name: Verify
+        run: |
+          kubectl get pods -o wide
+          kubectl get svc nginx
