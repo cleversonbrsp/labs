@@ -152,6 +152,20 @@ A resposta de `/portal/ping` deve incluir `lab.profile: kind` e `lab.env: kind-c
 
 ## 5. Config Server (perfil native)
 
+### O que é e para que serve?
+
+O **Config Server** (Spring Cloud Config Server) é um **serviço separado** que centraliza a **configuração** (properties) das suas aplicações. Em vez de cada app carregar tudo de um arquivo ou variáveis de ambiente fixas no deploy, a app pergunta ao Config Server: “qual é a minha config?”. O Config Server responde com o arquivo de properties correspondente (por nome da aplicação e perfil, ex.: `portal-demo` + perfil `kind`).
+
+**Para que serve aqui no lab:**
+
+1. **Separar config do código:** as properties (`server.port`, `context-path`, etc.) ficam em `config-properties/` e no ConfigMap; a aplicação **portal-demo** não tem esses valores “hardcoded” no JAR.
+2. **Um lugar para todos os ambientes:** o Config Server serve `portal-demo.properties` (base) e `portal-demo-kind.properties` (perfil kind). Em produção você teria `portal-demo-prod.properties` no mesmo esquema.
+3. **Trocar config sem rebuild:** em um fluxo com Git como fonte, você altera as properties no repositório de config; na próxima subida (ou refresh), a app busca a config nova no Config Server — sem precisar rebuildar a imagem da aplicação.
+
+**Resumo:** Config Server = “servidor de configuração”. A aplicação, ao subir, chama o Config Server (URL no `bootstrap.properties`), informa o nome (`portal-demo`) e o perfil (ex.: `kind` via `CLOUD_PROFILE`). O Config Server devolve as properties; a app usa essas properties para configurar porta, context-path, etc.
+
+---
+
 Neste lab o Config Server usa o perfil **native**: as properties vêm de um **ConfigMap** montado em `/config`, sem Git externo. Assim você não precisa de um repositório separado de config-properties no GitHub só para rodar.
 
 - **Arquivos base:** `config-properties/portal-demo.properties` e `portal-demo-kind.properties`.
