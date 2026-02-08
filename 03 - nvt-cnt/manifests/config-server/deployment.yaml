@@ -17,9 +17,8 @@ spec:
     spec:
       containers:
         - name: config-server
-          # Spring Cloud Config Server (modo native = file system)
-          # Spring Cloud Config Server (Docker Hub)
-          image: springcloud/config-server
+          # Spring Cloud Config Server (Docker Hub: springcloud/configserver)
+          image: springcloud/configserver
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8888
@@ -34,11 +33,17 @@ spec:
             - name: config-files
               mountPath: /config
               readOnly: true
-          readinessProbe:
-            httpGet:
-              path: /
+          # Java demora a subir; startupProbe dá até 120s antes de matar
+          startupProbe:
+            tcpSocket:
               port: 8888
             initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            tcpSocket:
+              port: 8888
+            initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
         - name: config-files
