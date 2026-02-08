@@ -1,3 +1,10 @@
+# =============================================================================
+# namespace.yaml - Namespace do lab Navita Connect no Kind
+# =============================================================================
+# Isola todos os recursos do lab (Config Server, Connect, ConfigMap) em um
+# namespace próprio (nvt-cnt). Equivalente aos namespaces "prod", "hom", "vivo"
+# no fluxo real da Navita. Deve ser aplicado antes dos outros manifestos.
+# =============================================================================
 apiVersion: v1
 kind: Namespace
 metadata:

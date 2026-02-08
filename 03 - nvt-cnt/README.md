@@ -2,6 +2,8 @@
 
 Este lab replica o **fluxo fim a fim** da aplicação **Navita Connect** (build → Config Server → deploy no Kubernetes) usando seu **GitHub pessoal** e um cluster **Kind** na sua máquina.
 
+**Conceitos didáticos:** para entender origem da imagem do Config Server, o que é `tcpSocket` e por que usamos nas probes, e por que não depender de path HTTP na readiness, veja **[CONCEITOS.md](CONCEITOS.md)**.
+
 ---
 
 ## 1. Visão do fluxo original (Navita)
@@ -113,9 +115,23 @@ O workflow `.github/workflows/pipeline-connect-kind.yml` fica na **raiz do repos
 5. **Verificação**
    ```bash
    kubectl get pods,svc -n nvt-cnt
-   kubectl port-forward svc/connect 9090:9090 -n nvt-cnt
-   # Acesse: http://localhost:9090/portal/ping
    ```
+
+---
+
+### 4.2 Como acessar a aplicação
+
+O Service da Connect é **ClusterIP** (só acessível dentro do cluster). Para acessar do seu navegador:
+
+1. Em um terminal, deixe o port-forward ativo:
+   ```bash
+   kubectl port-forward svc/connect 9090:9090 -n nvt-cnt
+   ```
+2. Abra no navegador:
+   - **Status (ping):** http://localhost:9090/portal/ping  
+   - **Base da aplicação:** http://localhost:9090/portal  
+
+A resposta de `/portal/ping` deve incluir `lab.profile: kind` e `lab.env: kind-cluster` (config vinda do Config Server). Para encerrar o acesso, use `Ctrl+C` no terminal do port-forward.
 
 ### 4.3 Via GitHub Actions (self-hosted runner)
 

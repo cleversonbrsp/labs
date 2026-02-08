@@ -1,13 +1,13 @@
-# Lab 03: Replicar fluxo Navita Connect no Kind
-# Build mock-connect -> Docker -> kind load -> kubectl apply
-#
-# COMO O DEPLOY CHEGA NO SEU KIND:
-# O job roda em "self-hosted" = na MÁQUINA onde você registrou o runner do GitHub.
-# Essa máquina precisa ser a mesma onde o Kind está rodando e onde o kubectl
-# aponta para o cluster (ex.: kind-dev-cluster). Os comandos kubectl apply e
-# kind load executam LOCALMENTE nessa máquina, então o deploy vai para o seu
-# cluster. Se rodar em ubuntu-latest (GitHub), não teria acesso ao seu Kind.
-
+# =============================================================================
+# pipeline-connect-kind.yml - Pipeline CI: build + deploy no Kind
+# =============================================================================
+# Faz checkout -> build Maven (mock-connect) -> Docker build -> kind load
+# -> kubectl apply (namespace, config-server, connect). Roda em self-hosted
+# para que kubectl e kind executem na máquina onde o cluster Kind está; assim
+# o deploy vai para o SEU cluster (ex.: dev-cluster). NAMESPACE=nvt-cnt;
+# KIND_CLUSTER_NAME deve bater com o nome do seu cluster (ex.: dev-cluster).
+# Conceitos (Config Server, tcpSocket, probes): ver 03 - nvt-cnt/CONCEITOS.md
+# =============================================================================
 name: Connect Kind (build + deploy)
 
 on:

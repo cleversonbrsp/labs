@@ -1,3 +1,11 @@
+# =============================================================================
+# service.yaml - Service do Config Server
+# =============================================================================
+# Expõe o Config Server dentro do cluster na porta 8888. A aplicação Connect
+# acessa via DNS: config-server.nvt-cnt.svc.cluster.local:8888 (definido no
+# bootstrap.properties do mock-connect). ClusterIP = só acessível de dentro
+# do cluster (pods no mesmo ou em outros namespaces).
+# =============================================================================
 apiVersion: v1
 kind: Service
 metadata:

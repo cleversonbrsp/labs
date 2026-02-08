@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Lab 03 - Cria cluster Kind e namespace nvt-cnt (se não existirem)
-
+# =============================================================================
+# setup-kind.sh - Prepara o ambiente Kind para o lab 03
+# =============================================================================
+# Cria o cluster Kind (se não existir) e o namespace nvt-cnt. Idempotente: pode
+# rodar várias vezes. Use quando for fazer deploy manual (sem pipeline). Se você
+# já tem cluster (ex.: dev-cluster), o script só criará o namespace nvt-cnt.
+# Variável KIND_CLUSTER_NAME define o nome do cluster (default: kind).
+# =============================================================================
 set -e
 
 CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"

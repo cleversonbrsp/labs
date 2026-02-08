@@ -1,5 +1,12 @@
-# Replicando devops-config/k8s/hom/app-manifest/connect/deployment.yaml
-# Ajustado para Kind: sem imagePullSecrets, sem nodeSelector, imagem local
+# =============================================================================
+# deployment.yaml - Deployment da Connect (mock ou imagem real) no Kind
+# =============================================================================
+# Replica a estrutura do devops-config (ex.: k8s/hom/app-manifest/connect/
+# deployment.yaml). Usa imagem connect:local (carregada com kind load) e
+# CLOUD_PROFILE=kind para buscar config no Config Server. Ajustado para o lab:
+# sem imagePullSecrets (imagem local), sem nodeSelector. Probes em /portal/ping
+# como no Connect real. Deve ser aplicado DEPOIS do Config Server estar Ready.
+# =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:

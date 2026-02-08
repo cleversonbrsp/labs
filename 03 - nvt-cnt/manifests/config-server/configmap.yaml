@@ -1,5 +1,12 @@
-# ConfigMap com properties para o Config Server (perfil native)
-# Equivalente ao repo navita-config-properties no fluxo real
+# =============================================================================
+# configmap.yaml - Arquivos de properties para o Config Server (perfil native)
+# =============================================================================
+# O Config Server em modo "native" lê configuração do sistema de arquivos em
+# vez de um repositório Git. Este ConfigMap é montado em /config no container;
+# os arquivos connect.properties e connect-kind.properties são os mesmos que
+# no fluxo real vêm do repositório navita-config-properties. Permite rodar o
+# lab sem um repo Git externo de properties.
+# =============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:

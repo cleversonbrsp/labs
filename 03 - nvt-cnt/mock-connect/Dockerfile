@@ -1,4 +1,11 @@
-# Replicando ideia do portal/Dockerfile (navita-connect) - apenas JAR
+# =============================================================================
+# Dockerfile - Imagem da aplicação Connect (mock) para o lab
+# =============================================================================
+# Replica a ideia do portal/Dockerfile do navita-connect: JAR + ENV CLOUD_PROFILE
+# + java -Dspring.cloud.config.profile=$CLOUD_PROFILE -jar. A imagem é taggeada
+# como connect:local e carregada no Kind com "kind load docker-image". No K8s
+# o CLOUD_PROFILE é sobrescrito pelo Deployment (value: "kind").
+# =============================================================================
 FROM eclipse-temurin:8-jre-alpine
 WORKDIR /app
 
