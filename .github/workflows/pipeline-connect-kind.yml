@@ -2,7 +2,9 @@
 # pipeline-connect-kind.yml - Pipeline CI: build + deploy no Kind
 # =============================================================================
 # Faz checkout -> build Maven (mock-connect) -> Docker build -> kind load
-# -> kubectl apply (namespace, config-server, connect). Roda em self-hosted
+# -> kubectl apply (namespace, config-server, connect) -> rollout restart connect.
+# O rollout restart garante novos pods com a imagem recém-carregada (mesma tag);
+# RollingUpdate padrão = sem queda (zero downtime). Roda em self-hosted
 # para que kubectl e kind executem na máquina onde o cluster Kind está; assim
 # o deploy vai para o SEU cluster (ex.: dev-cluster). NAMESPACE=nvt-cnt;
 # KIND_CLUSTER_NAME deve bater com o nome do seu cluster (ex.: dev-cluster).
@@ -62,6 +64,8 @@ jobs:
       - name: Deploy Connect
         run: |
           kubectl apply -f "03 - nvt-cnt/manifests/connect/" -n ${{ env.NAMESPACE }}
+          # Força novos pods: a imagem é sempre connect:local; sem restart os pods antigos continuam
+          kubectl rollout restart deployment/connect -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment/connect -n ${{ env.NAMESPACE }} --timeout=180s
 
       - name: Verify

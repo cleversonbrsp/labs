@@ -33,7 +33,7 @@ public class PingController {
     public String index() {
         return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Mock Connect - Lab</title></head>"
             + "<body><h1>Mock Navita Connect</h1>"
-            + "<p>Lab 03 – fluxo Connect no Kind. Aplicação está no ar.</p>"
+            + "<p>Lab 03 – fluxo Connect no k8s Kind cluster. Aplicação está no ar.</p>"
             + "<ul><li><strong>Status:</strong> <a href=\"/portal/ping\">/portal/ping</a></li>"
             + "<li><strong>Perfil (Config Server):</strong> " + labProfile + "</li>"
             + "<li><strong>Ambiente:</strong> " + labEnv + "</li></ul></body></html>";

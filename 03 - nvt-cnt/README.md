@@ -136,8 +136,12 @@ A resposta de `/portal/ping` deve incluir `lab.profile: kind` e `lab.env: kind-c
 ### 4.3 Via GitHub Actions (self-hosted runner)
 
 - O workflow **pipeline-connect-kind** (em `.github/workflows/`) dispara em `workflow_dispatch` ou em push em `03 - nvt-cnt/**`.
-- Ele faz: checkout → build mock → Docker build → `kind load docker-image` → `kubectl apply` dos manifestos.
+- Ele faz: checkout → build mock → Docker build → `kind load docker-image` → `kubectl apply` → **`kubectl rollout restart deployment/connect`** → rollout status.
 - O runner deve estar na mesma máquina do Kind e com `kubectl` apontando para o cluster Kind.
+
+**Por que `rollout restart`?** A imagem usada é sempre `connect:local`. O Kubernetes só recria os pods quando o **template do Deployment** muda (ex.: nome da imagem). Como o nome não muda, os pods antigos continuariam rodando com o container antigo mesmo após um novo `kind load`. O `rollout restart` força a criação de novos pods, que passam a usar a imagem recém-carregada.
+
+**Sem queda (zero downtime):** o rollout usa a estratégia padrão **RollingUpdate**. O Kubernetes sobe o pod novo, espera ele ficar Ready (probes) e só então encerra o antigo. Enquanto o novo sobe, o antigo segue atendendo; quando o antigo sai, o novo já está pronto.
 
 ---
 
@@ -170,3 +174,11 @@ Para subir a **Connect real** (código em `nvt-repos/navita-connect`):
 - **Fluxo replicado:** Properties → Config Server → Build (mock ou Connect) → Imagem → Kind → Deploy com CLOUD_PROFILE.
 - **Diferenças:** Sem OCI/OCIR (imagem via `kind load`), sem Nexus, manifestos e config no próprio repo, Config Server em modo native com ConfigMap.
 - Para **produção/homologação real**, use o procedimento completo em `PROCEDIMENTO-TECNICO-DEPLOY-NAVITA-CONNECT.md` no repositório `nvt-repos`.
+
+---
+
+## 8. Alterações recentes
+
+| Data       | Alteração |
+|-----------|-----------|
+| 2026-02-08 | **Pipeline:** após `kubectl apply` da Connect, passou a rodar `kubectl rollout restart deployment/connect` para que novos builds (mesma tag `connect:local`) gerem novos pods. Deploy continua sem queda (RollingUpdate: sobe o novo pod, espera Ready, depois encerra o antigo). Documentado em 4.3 e no cabeçalho do workflow. |
