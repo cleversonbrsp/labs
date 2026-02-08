@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: nvt-cnt
+  labels:
+    app: config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+        - name: config-server
+          # Spring Cloud Config Server (modo native = file system)
+          # Spring Cloud Config Server (Docker Hub)
+          image: springcloud/config-server
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8888
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "native"
+            - name: SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS
+              value: "file:/config/"
+            - name: SERVER_PORT
+              value: "8888"
+          volumeMounts:
+            - name: config-files
+              mountPath: /config
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8888
+            initialDelaySeconds: 15
+            periodSeconds: 5
+      volumes:
+        - name: config-files
+          configMap:
+            name: config-server-files

@@ -1,0 +1,25 @@
+# ConfigMap com properties para o Config Server (perfil native)
+# Equivalente ao repo navita-config-properties no fluxo real
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-server-files
+  namespace: nvt-cnt
+data:
+  connect.properties: |
+    # Base config - replicando navita-config-properties (mínimo)
+    file.encoding=UTF-8
+    server.port=9090
+    server.servlet.context-path=/portal
+    server.context-path=/portal
+    server.session-timeout=1800
+    server.use-forward-headers=true
+    app.languages=en|es|pt
+  connect-kind.properties: |
+    # Perfil kind - CLOUD_PROFILE=kind
+    spring.profiles.active=dev
+    server.port=9090
+    server.servlet.context-path=/portal
+    server.context-path=/portal
+    lab.profile=kind
+    lab.env=kind-cluster

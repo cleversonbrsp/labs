@@ -1,0 +1,52 @@
+# Replicando devops-config/k8s/hom/app-manifest/connect/deployment.yaml
+# Ajustado para Kind: sem imagePullSecrets, sem nodeSelector, imagem local
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connect
+  namespace: nvt-cnt
+  labels:
+    app: connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connect
+  template:
+    metadata:
+      labels:
+        app: connect
+    spec:
+      containers:
+        - name: connect
+          image: connect:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CLOUD_PROFILE
+              value: "kind"
+            - name: JVM_OPTIONS
+              value: "-Xmx256m"
+          ports:
+            - containerPort: 9090
+              name: http
+          startupProbe:
+            httpGet:
+              path: /portal/ping
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /portal/ping
+              port: 9090
+              scheme: HTTP
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "384Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
