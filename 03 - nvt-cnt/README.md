@@ -2,7 +2,8 @@
 
 Este lab replica o **fluxo fim a fim** da aplicação **Navita Connect** (build → Config Server → deploy no Kubernetes) usando seu **GitHub pessoal** e um cluster **Kind** na sua máquina.
 
-**Conceitos didáticos:** para entender origem da imagem do Config Server, o que é `tcpSocket` e por que usamos nas probes, e por que não depender de path HTTP na readiness, veja **[CONCEITOS.md](CONCEITOS.md)**.
+**Conceitos didáticos:** [CONCEITOS.md](CONCEITOS.md) (Config Server, tcpSocket, probes).  
+**De onde veio este modelo:** [MODELO-DESDE-NVT-REPOS.md](MODELO-DESDE-NVT-REPOS.md) (mapeamento nvt-repos → lab e decisões de desenho).
 
 ---
 

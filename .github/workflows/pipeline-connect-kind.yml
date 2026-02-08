@@ -28,46 +28,67 @@ env:
 
 jobs:
   build-and-deploy:
+    # Roda na MÁQUINA onde você registrou o runner. Precisa ser a mesma onde o Kind
+    # está e onde kubectl aponta para o cluster. Assim kubectl apply e kind load
+    # executam localmente e o deploy vai para o SEU cluster (não para servidores GitHub).
     runs-on: self-hosted
     steps:
+      # --- Código: igual ao real (checkout do repo da aplicação)
       - name: Checkout
         uses: actions/checkout@v4
 
+      # --- Build: no real é JDK 8 + Maven (portal.jar). Aqui mesmo JDK para o mock.
       - name: Set up JDK 8
         uses: actions/setup-java@v4
         with:
           java-version: '8'
           distribution: 'temurin'
 
+      # No real: mvn clean deploy (ou release:prepare/perform em prod). Aqui: apenas
+      # package do mock-connect (Config Client + /portal/ping). POM está em mock-connect/.
       - name: Build mock-connect
         run: |
           cd "03 - nvt-cnt/mock-connect"
           mvn -q package -DskipTests
           echo "VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_ENV
 
+      # No real: Dockerfile.prod (portal.jar + jks + opentelemetry). Aqui: Dockerfile
+      # só com o JAR do mock. Tag fixa connect:local (no real seria connect-hom:versão).
       - name: Docker build
         run: |
           cd "03 - nvt-cnt/mock-connect"
           docker build -t ${{ env.IMAGE_NAME }} --build-arg VERSION=${{ env.VERSION }} .
 
+      # No real: docker push para OCIR; o OKE faz pull da imagem. Aqui não há OCI:
+      # kind load leva a imagem do daemon Docker local direto para os nodes do Kind,
+      # sem registry na nuvem. Ver MODELO-DESDE-NVT-REPOS.md seção "Kind load (sem OCI)".
       - name: Load image into Kind
         run: kind load docker-image ${{ env.IMAGE_NAME }} --name ${{ env.KIND_CLUSTER_NAME }}
 
+      # No real: namespaces prod/hom já existem. Aqui: criamos nvt-cnt uma vez.
       - name: Create namespace
         run: kubectl apply -f "03 - nvt-cnt/manifests/namespace.yaml"
 
+      # No real: Config Server já está no OKE (deploy separado). Aqui: aplicamos
+      # ConfigMap + Deployment + Service do Config Server (modo native, properties
+      # no ConfigMap). A Connect depende dele no startup; por isso aplicamos primeiro.
       - name: Deploy Config Server
         run: |
           kubectl apply -f "03 - nvt-cnt/manifests/config-server/" -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment/config-server -n ${{ env.NAMESPACE }} --timeout=120s
 
+      # No real: pipeline baixa deployment/service do devops-config (API GitHub) e
+      # aplica; depois kubectl set image + rollout. Aqui: manifestos estão no repo;
+      # rollout restart é necessário porque a tag é sempre connect:local — sem restart
+      # os pods antigos continuariam rodando (K8s não recria se o template não mudou).
+      # RollingUpdate = sobe o novo pod, espera Ready, encerra o antigo (zero downtime).
       - name: Deploy Connect
         run: |
           kubectl apply -f "03 - nvt-cnt/manifests/connect/" -n ${{ env.NAMESPACE }}
-          # Força novos pods: a imagem é sempre connect:local; sem restart os pods antigos continuam
           kubectl rollout restart deployment/connect -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment/connect -n ${{ env.NAMESPACE }} --timeout=180s
 
+      # Apenas conferência: pods e deployment no namespace nvt-cnt.
       - name: Verify
         run: |
           kubectl get pods,svc -n ${{ env.NAMESPACE }}
