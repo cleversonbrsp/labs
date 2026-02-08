@@ -6,9 +6,9 @@
 # O rollout restart garante novos pods com a imagem recém-carregada (mesma tag);
 # RollingUpdate padrão = sem queda (zero downtime). Roda em self-hosted
 # para que kubectl e kind executem na máquina onde o cluster Kind está; assim
-# o deploy vai para o SEU cluster (ex.: dev-cluster). NAMESPACE=nvt-cnt;
-# KIND_CLUSTER_NAME deve bater com o nome do seu cluster (ex.: dev-cluster).
-# Conceitos (Config Server, tcpSocket, probes): ver 03 - nvt-cnt/CONCEITOS.md
+# o deploy vai para o SEU cluster (ex.: dev-cluster). NAMESPACE=lab-portal;
+# IMAGE_NAME=portal-demo:local. KIND_CLUSTER_NAME = nome do seu cluster (ex.: dev-cluster).
+# Conceitos (Config Server, tcpSocket, probes): ver 03 - nvt-cnt/README.md seção 7
 # =============================================================================
 name: Connect Kind (build + deploy)
 
@@ -21,8 +21,8 @@ on:
   workflow_dispatch:
 
 env:
-  NAMESPACE: nvt-cnt
-  IMAGE_NAME: connect:local
+  NAMESPACE: lab-portal
+  IMAGE_NAME: portal-demo:local
   # Nome do cluster Kind (kubectl config current-context = kind-<KIND_CLUSTER_NAME>)
   KIND_CLUSTER_NAME: dev-cluster
 
@@ -53,7 +53,7 @@ jobs:
           echo "VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_ENV
 
       # No real: Dockerfile.prod (portal.jar + jks + opentelemetry). Aqui: Dockerfile
-      # só com o JAR do mock. Tag fixa connect:local (no real seria connect-hom:versão).
+      # só com o JAR do mock. Tag fixa portal-demo:local.
       - name: Docker build
         run: |
           cd "03 - nvt-cnt/mock-connect"
@@ -61,11 +61,11 @@ jobs:
 
       # No real: docker push para OCIR; o OKE faz pull da imagem. Aqui não há OCI:
       # kind load leva a imagem do daemon Docker local direto para os nodes do Kind,
-      # sem registry na nuvem. Ver MODELO-DESDE-NVT-REPOS.md seção "Kind load (sem OCI)".
+      # sem registry na nuvem. Ver 03 - nvt-cnt/README.md seção 8.3 (Kind load).
       - name: Load image into Kind
         run: kind load docker-image ${{ env.IMAGE_NAME }} --name ${{ env.KIND_CLUSTER_NAME }}
 
-      # No real: namespaces prod/hom já existem. Aqui: criamos nvt-cnt uma vez.
+      # No real: namespaces prod/hom já existem. Aqui: criamos lab-portal uma vez.
       - name: Create namespace
         run: kubectl apply -f "03 - nvt-cnt/manifests/namespace.yaml"
 
@@ -79,17 +79,17 @@ jobs:
 
       # No real: pipeline baixa deployment/service do devops-config (API GitHub) e
       # aplica; depois kubectl set image + rollout. Aqui: manifestos estão no repo;
-      # rollout restart é necessário porque a tag é sempre connect:local — sem restart
+      # rollout restart é necessário porque a tag é sempre portal-demo:local — sem restart
       # os pods antigos continuariam rodando (K8s não recria se o template não mudou).
       # RollingUpdate = sobe o novo pod, espera Ready, encerra o antigo (zero downtime).
       - name: Deploy Connect
         run: |
           kubectl apply -f "03 - nvt-cnt/manifests/connect/" -n ${{ env.NAMESPACE }}
-          kubectl rollout restart deployment/connect -n ${{ env.NAMESPACE }}
-          kubectl rollout status deployment/connect -n ${{ env.NAMESPACE }} --timeout=180s
+          kubectl rollout restart deployment/portal-demo -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/portal-demo -n ${{ env.NAMESPACE }} --timeout=180s
 
-      # Apenas conferência: pods e deployment no namespace nvt-cnt.
+      # Apenas conferência: pods e deployment no namespace lab-portal.
       - name: Verify
         run: |
           kubectl get pods,svc -n ${{ env.NAMESPACE }}
-          kubectl get deployment connect -n ${{ env.NAMESPACE }} -o wide
+          kubectl get deployment portal-demo -n ${{ env.NAMESPACE }} -o wide

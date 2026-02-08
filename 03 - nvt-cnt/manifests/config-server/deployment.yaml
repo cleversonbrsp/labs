@@ -4,15 +4,15 @@
 # Executa a imagem springcloud/configserver (Docker Hub) em modo "native":
 # lê properties de /config (ConfigMap config-server-files). A aplicação Connect
 # (ou mock) usa spring.cloud.config.uri apontando para o Service config-server
-# e obtém connect.properties + connect-<CLOUD_PROFILE>.properties. Usamos
+# e obtém portal-demo.properties + portal-demo-<CLOUD_PROFILE>.properties. Usamos
 # startupProbe e readinessProbe com tcpSocket na porta 8888 para não depender
-# de path HTTP e dar tempo ao processo Java subir (ver CONCEITOS.md).
+# de path HTTP e dar tempo ao processo Java subir (ver README.md seção 7).
 # =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: config-server
-  namespace: nvt-cnt
+  namespace: lab-portal
   labels:
     app: config-server
 spec:

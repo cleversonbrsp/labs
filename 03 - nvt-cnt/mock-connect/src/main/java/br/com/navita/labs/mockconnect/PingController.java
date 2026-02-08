@@ -10,12 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Replica o endpoint /portal/ping do Navita Connect.
- *
- * No fluxo real, o Connect expõe /portal/ping para startupProbe e readinessProbe
- * no Deployment. Este controller responde em GET /ping com context-path /portal,
- * resultando em /portal/ping. Retorna lab.profile e lab.env vindos do Config
- * Server (connect-kind.properties) para validar que a config foi carregada.
+ * Endpoint /portal/ping para startupProbe e readinessProbe no Deployment.
+ * GET /ping com context-path /portal = /portal/ping. Retorna lab.profile e
+ * lab.env vindos do Config Server (portal-demo-kind.properties).
  */
 @RestController
 public class PingController {
@@ -32,7 +29,7 @@ public class PingController {
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
     public String index() {
         return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Mock Connect - Lab</title></head>"
-            + "<body><h1>Mock Navita Connect</h1>"
+            + "<body><h1>Portal Demo (Lab)</h1>"
             + "<p>Lab 03 – fluxo Connect no k8s Kind cluster. Aplicação está no ar.</p>"
             + "<ul><li><strong>Status:</strong> <a href=\"/portal/ping\">/portal/ping</a></li>"
             + "<li><strong>Perfil (Config Server):</strong> " + labProfile + "</li>"
@@ -43,7 +40,7 @@ public class PingController {
     public ResponseEntity<Map<String, String>> ping() {
         Map<String, String> body = new HashMap<>();
         body.put("status", "UP");
-        body.put("app", "mock-connect");
+        body.put("app", "portal-demo");
         body.put("lab.profile", labProfile);
         body.put("lab.env", labEnv);
         return ResponseEntity.ok(body);

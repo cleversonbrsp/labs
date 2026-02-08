@@ -3,11 +3,10 @@
   =============================================================================
   pom.xml - Mock Connect (aplicação mínima para o lab)
   =============================================================================
-  Define uma aplicação Spring Boot que replica o comportamento do Navita Connect
-  no startup: Spring Cloud Config Client (bootstrap) + endpoint /portal/ping.
-  Permite testar o fluxo fim a fim (Config Server -> Connect) sem o código real.
-  Dependências: spring-cloud-starter-bootstrap + spring-cloud-starter-config
-  para buscar config no Config Server; context-path /portal como no Connect.
+  Aplicação Spring Boot de exemplo: Spring Cloud Config Client (bootstrap) +
+  endpoint /portal/ping. Testa o fluxo Config Server -> app no Kind.
+  Dependências: spring-cloud-starter-bootstrap + spring-cloud-starter-config;
+  context-path /portal.
   =============================================================================
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -26,7 +25,7 @@
     <artifactId>mock-connect</artifactId>
     <version>1.0.0</version>
     <name>mock-connect</name>
-    <description>Mock Navita Connect para lab Kind - Config Client + /portal/ping</description>
+    <description>Portal Demo - lab Kind (Config Client + /portal/ping)</description>
 
     <properties>
         <java.version>8</java.version>

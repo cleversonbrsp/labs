@@ -2,15 +2,15 @@
 # =============================================================================
 # setup-kind.sh - Prepara o ambiente Kind para o lab 03
 # =============================================================================
-# Cria o cluster Kind (se não existir) e o namespace nvt-cnt. Idempotente: pode
+# Cria o cluster Kind (se não existir) e o namespace lab-portal. Idempotente: pode
 # rodar várias vezes. Use quando for fazer deploy manual (sem pipeline). Se você
-# já tem cluster (ex.: dev-cluster), o script só criará o namespace nvt-cnt.
+# já tem cluster (ex.: dev-cluster), o script só criará o namespace lab-portal.
 # Variável KIND_CLUSTER_NAME define o nome do cluster (default: kind).
 # =============================================================================
 set -e
 
 CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
-NAMESPACE="nvt-cnt"
+NAMESPACE="lab-portal"
 
 if ! command -v kind &>/dev/null; then
   echo "kind não encontrado. Instale: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"

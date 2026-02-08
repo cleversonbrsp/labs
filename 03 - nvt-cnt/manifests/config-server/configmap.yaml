@@ -2,19 +2,18 @@
 # configmap.yaml - Arquivos de properties para o Config Server (perfil native)
 # =============================================================================
 # O Config Server em modo "native" lê configuração do sistema de arquivos em
-# vez de um repositório Git. Este ConfigMap é montado em /config no container;
-# os arquivos connect.properties e connect-kind.properties são os mesmos que
-# no fluxo real vêm do repositório navita-config-properties. Permite rodar o
-# lab sem um repo Git externo de properties.
+# /config. Os arquivos portal-demo.properties e portal-demo-kind.properties
+# são servidos quando a aplicação (spring.application.name=portal-demo) pede
+# o perfil "kind". Permite rodar o lab sem um repo Git externo de properties.
 # =============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-server-files
-  namespace: nvt-cnt
+  namespace: lab-portal
 data:
-  connect.properties: |
-    # Base config - replicando navita-config-properties (mínimo)
+  portal-demo.properties: |
+    # Config base da aplicação portal-demo (lab)
     file.encoding=UTF-8
     server.port=9090
     server.servlet.context-path=/portal
@@ -22,7 +21,7 @@ data:
     server.session-timeout=1800
     server.use-forward-headers=true
     app.languages=en|es|pt
-  connect-kind.properties: |
+  portal-demo-kind.properties: |
     # Perfil kind - CLOUD_PROFILE=kind
     spring.profiles.active=dev
     server.port=9090

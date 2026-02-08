@@ -1,13 +1,12 @@
 # =============================================================================
-# namespace.yaml - Namespace do lab Navita Connect no Kind
+# namespace.yaml - Namespace do lab (aplicação de exemplo no Kind)
 # =============================================================================
-# Isola todos os recursos do lab (Config Server, Connect, ConfigMap) em um
-# namespace próprio (nvt-cnt). Equivalente aos namespaces "prod", "hom", "vivo"
-# no fluxo real da Navita. Deve ser aplicado antes dos outros manifestos.
+# Isola todos os recursos do lab (Config Server, portal-demo, ConfigMap) em um
+# namespace próprio (lab-portal). Deve ser aplicado antes dos outros manifestos.
 # =============================================================================
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: nvt-cnt
+  name: lab-portal
   labels:
-    app.kubernetes.io/name: nvt-connect-lab
+    app.kubernetes.io/name: lab-portal

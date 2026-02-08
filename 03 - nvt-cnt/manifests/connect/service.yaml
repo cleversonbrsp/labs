@@ -1,20 +1,19 @@
 # =============================================================================
-# service.yaml - Service da Connect
+# service.yaml - Service da aplicação portal-demo
 # =============================================================================
-# Expõe a aplicação Connect na porta 9090 dentro do cluster. Permite acesso
-# via connect.nvt-cnt.svc.cluster.local:9090 (ex.: de um Ingress ou
-# port-forward). O path da aplicação é /portal (ex.: /portal/ping para probes).
+# Expõe a aplicação na porta 9090 dentro do cluster. Acesso via
+# portal-demo.lab-portal.svc.cluster.local:9090 ou port-forward. Path /portal (ex.: /portal/ping).
 # =============================================================================
 apiVersion: v1
 kind: Service
 metadata:
-  name: connect
-  namespace: nvt-cnt
+  name: portal-demo
+  namespace: lab-portal
   labels:
-    app: connect
+    app: portal-demo
 spec:
   selector:
-    app: connect
+    app: portal-demo
   ports:
     - name: http
       port: 9090
