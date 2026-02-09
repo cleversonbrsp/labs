@@ -54,25 +54,29 @@ Um fluxo típico de deploy com Config Server segue esta ordem:
 
 ```
 03 - nvt-cnt/
-├── README.md                    # Este arquivo (documentação centralizada)
+├── Makefile                     # make rebuild = Kind + NGINX Ingress + MetalLB
+├── README.md                    # Este arquivo
 ├── config-properties/           # Properties servidas pelo Config Server
 │   ├── portal-demo.properties
 │   └── portal-demo-kind.properties
-├── manifests/                   # Kubernetes (Kind)
+├── manifests/
 │   ├── namespace.yaml           # lab-portal
 │   ├── config-server/
-│   │   ├── configmap.yaml       # Properties para perfil native
+│   │   ├── configmap.yaml
 │   │   ├── deployment.yaml
 │   │   └── service.yaml
-│   └── connect/                 # deployment + service da portal-demo
+│   └── connect/                 # portal-demo + Ingress
 │       ├── deployment.yaml
-│       └── service.yaml
+│       ├── service.yaml
+│       └── ingress.yaml         # host portal.local → portal-demo:9090
 ├── mock-connect/                # App portal-demo (Config Client + /portal/ping)
 │   ├── pom.xml
 │   ├── Dockerfile
 │   └── src/...
-└── scripts/
-    └── setup-kind.sh            # Cria cluster + namespace (se necessário)
+└── scripts/                     # Stack Kind (baseado em kind-complete-stack)
+    ├── kind-cluster.yaml        # 3 nós, portas 80/443
+    ├── deploy-nginx-ingress.sh
+    └── deploy-metallb.sh
 ```
 
 O workflow `.github/workflows/pipeline-connect-kind.yml` fica na **raiz do repositório labs** e referencia esta pasta.
@@ -83,37 +87,35 @@ O workflow `.github/workflows/pipeline-connect-kind.yml` fica na **raiz do repos
 
 ### 4.1 Pré-requisitos
 
-- **Docker** e **Kind** instalados
-- **kubectl** configurado para o cluster Kind
-- **GitHub pessoal** com o repositório `labs` (ou fork)
-- (Opcional) **Self-hosted runner** na máquina onde o Kind está, para CI no GitHub
+- **Docker**, **Kind**, **kubectl** e **helm**
+- Cluster criado com `make rebuild` (Ingress + MetalLB)
+- (Opcional) **Self-hosted runner** na máquina do Kind, para CI no GitHub
 
 ### 4.2 Passo a passo
 
-1. **Criar cluster Kind e namespace**
+1. **Recriar o cluster Kind do zero (Ingress + MetalLB)**
+   Na pasta do lab (`03 - nvt-cnt`):
    ```bash
-   ./scripts/setup-kind.sh
+   make rebuild
    ```
-   Ou manualmente: `kind create cluster`, `kubectl create namespace lab-portal`.
+   Isso destrói o cluster anterior, cria um novo (3 nós, portas 80/443), instala NGINX Ingress Controller e MetalLB. Exige `kind`, `kubectl` e `helm`. Se as portas 80/443 estiverem em uso no host, veja [Troubleshooting](#troubleshooting) no final do README.
 
-2. **Config Server primeiro**
-   - O Config Server precisa estar no ar antes dos pods da aplicação.
+2. **Namespace e Config Server**
    ```bash
    kubectl apply -f "03 - nvt-cnt/manifests/namespace.yaml"
    kubectl apply -f "03 - nvt-cnt/manifests/config-server/" -n lab-portal
    kubectl rollout status deployment/config-server -n lab-portal
    ```
 
-3. **Build da aplicação (portal-demo)**
-   - O workflow ou você localmente:
-     ```bash
-     cd "03 - nvt-cnt/mock-connect"
-     mvn -q package -DskipTests
-     docker build -t portal-demo:local .
-     kind load docker-image portal-demo:local
-     ```
+3. **Build e carga da imagem portal-demo**
+   ```bash
+   cd "03 - nvt-cnt/mock-connect"
+   mvn -q package -DskipTests
+   docker build -t portal-demo:local .
+   kind load docker-image portal-demo:local --name kind
+   ```
 
-4. **Deploy da aplicação**
+4. **Deploy da aplicação e Ingress**
    ```bash
    kubectl apply -f "03 - nvt-cnt/manifests/connect/" -n lab-portal
    kubectl rollout status deployment/portal-demo -n lab-portal
@@ -122,21 +124,36 @@ O workflow `.github/workflows/pipeline-connect-kind.yml` fica na **raiz do repos
 5. **Verificação**
    ```bash
    kubectl get pods,svc -n lab-portal
+   kubectl get ingress -n lab-portal
    ```
 
 ### 4.3 Como acessar a aplicação
 
-O Service da aplicação é **ClusterIP** (só acessível dentro do cluster). Para acessar do seu navegador:
+**Opção A – Ingress + /etc/hosts (portal.local)**
 
-1. Em um terminal, deixe o port-forward ativo:
+O NGINX Ingress Controller é um Service tipo LoadBalancer; o MetalLB atribui um IP (ex.: 172.19.255.200).
+
+1. Obtenha o IP do Ingress Controller:
    ```bash
-   kubectl port-forward svc/portal-demo 9090:9090 -n lab-portal
+   kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
    ```
-2. Abra no navegador:
-   - **Status (ping):** http://localhost:9090/portal/ping  
-   - **Base da aplicação:** http://localhost:9090/portal  
+2. Adicione no `/etc/hosts` (substitua `$IP` pelo valor obtido):
+   ```bash
+   echo "$IP portal.local" | sudo tee -a /etc/hosts
+   ```
+3. No navegador (o lab usa hostPort 8080/8443 para evitar conflito com a porta 80 do host):
+   - **Página:** http://portal.local:8080/portal  
+   - **Ping:** http://portal.local:8080/portal/ping  
 
-A resposta de `/portal/ping` deve incluir `lab.profile: kind` e `lab.env: kind-cluster` (config vinda do Config Server). Para encerrar o acesso, use `Ctrl+C` no terminal do port-forward.
+**Opção B – Port-forward (sempre funciona)**
+
+```bash
+kubectl port-forward svc/portal-demo 9090:9090 -n lab-portal
+```
+
+Acesse http://localhost:9090/portal e http://localhost:9090/portal/ping .
+
+A resposta de `/portal/ping` deve incluir `lab.profile: kind` e `lab.env: kind-cluster` (config vinda do Config Server).
 
 ### 4.4 Via GitHub Actions (self-hosted runner)
 
@@ -147,6 +164,12 @@ A resposta de `/portal/ping` deve incluir `lab.profile: kind` e `lab.env: kind-c
 **Por que `rollout restart`?** A imagem usada é sempre `portal-demo:local`. O Kubernetes só recria os pods quando o **template do Deployment** muda (ex.: nome da imagem). Como o nome não muda, os pods antigos continuariam rodando com o container antigo mesmo após um novo `kind load`. O `rollout restart` força a criação de novos pods, que passam a usar a imagem recém-carregada.
 
 **Sem queda (zero downtime):** o rollout usa a estratégia padrão **RollingUpdate**. O Kubernetes sobe o pod novo, espera ele ficar Ready (probes) e só então encerra o antigo. Enquanto o novo sobe, o antigo segue atendendo; quando o antigo sai, o novo já está pronto.
+
+### 4.5 Troubleshooting
+
+- **Portas 80/443 em uso:** O lab já está configurado para **8080/8443** no host (`scripts/kind-cluster.yaml`). Use http://portal.local:8080/portal . Se quiser usar 80/443, edite o config para `hostPort: 80` e `hostPort: 443` e libere essas portas no host.
+- **MetalLB pool:** O pool padrão é `172.19.255.200-172.19.255.250`. Para conferir a sub-rede do Docker: `docker network inspect kind | grep Subnet`. Ajuste o range em `scripts/deploy-metallb.sh` se necessário.
+- **Ingress não resolve:** Confirme que o host `portal.local` no `/etc/hosts` aponta para o IP do Service `ingress-nginx-controller` (namespace `ingress-nginx`), não para o IP do portal-demo.
 
 ---
 
@@ -251,7 +274,7 @@ Ordem típica: 1º properties → 2º Config Server → 3º cluster + registry �
 | Manifests baixados via API | **kubectl apply -f** nos arquivos do repo | YAML versionados no repo. |
 | imagePullSecrets | **Nenhum**; `imagePullPolicy: IfNotPresent` | Imagem carregada com kind load. |
 | Múltiplos ambientes | **Um ambiente**: namespace `lab-portal`, perfil `kind` | Foco em um fluxo fim a fim. |
-| Vários deployments, HPA, Ingress | **Só portal-demo** (1 réplica), **ClusterIP**, **port-forward** | Reduzir complexidade. |
+| Vários deployments, HPA, Ingress | **portal-demo** (1 réplica), **ClusterIP** + **Ingress** (portal.local), **port-forward** | Ingress + MetalLB no Kind. |
 | Rollout com nova tag | **kubectl rollout restart** após apply | Tag fixa `portal-demo:local`; sem restart os pods antigos continuariam (RollingUpdate, zero downtime). |
 
 ### 8.3 Kind load (sem registry na nuvem)
@@ -264,7 +287,7 @@ Ordem típica: 1º properties → 2º Config Server → 3º cluster + registry �
 
 - **Manter igual ao fluxo de referência:** ordem config → Config Server → build → imagem → deploy com CLOUD_PROFILE; Spring Cloud Config Client; estrutura deployment/service; “properties base + perfil”.
 - **Simplificar para o lab:** um repo em vez de vários; imagem pública para o Config Server; mock em vez de app completa; Kind + kind load em vez de registry/cluster na nuvem; manifestos locais; rollout restart explícito para mesma tag.
-- **Omitir no lab:** Nexus, certificados, OpenTelemetry, múltiplos deployments (async), HPA, Ingress (opcional depois), múltiplos ambientes.
+- **No lab:** Ingress (NGINX) + MetalLB para acesso via portal.local; omitir Nexus, certificados, OpenTelemetry, múltiplos deployments (async), HPA avançado.
 
 ### 8.5 Referência rápida de arquivos
 
@@ -273,7 +296,7 @@ Ordem típica: 1º properties → 2º Config Server → 3º cluster + registry �
 | Properties da aplicação | `config-properties/portal-demo*.properties` e ConfigMap em `manifests/config-server/configmap.yaml` |
 | Config Server | Imagem springcloud/configserver + ConfigMap em `manifests/config-server/` |
 | Pipeline | `labs/.github/workflows/pipeline-connect-kind.yml` |
-| Deployment/Service portal-demo | `manifests/connect/` |
+| Deployment/Service/Ingress portal-demo | `manifests/connect/` |
 | Bootstrap da aplicação | `mock-connect/src/main/resources/bootstrap.properties` |
 
 ---
@@ -289,4 +312,5 @@ Ordem típica: 1º properties → 2º Config Server → 3º cluster + registry �
 
 | Data       | Alteração |
 |-----------|-----------|
+| 2026-02-08 | **Kind completo:** Stack baseada em kind-complete-stack: `make rebuild` recria cluster com 3 nós, NGINX Ingress e MetalLB. Acesso via Ingress (portal.local) + /etc/hosts ou port-forward. Removido kind-config.yaml; adicionados `scripts/`, Makefile e `manifests/connect/ingress.yaml`. |
 | 2026-02-08 | **Pipeline:** após `kubectl apply`, passou a rodar `kubectl rollout restart deployment/portal-demo` para que novos builds (mesma tag `portal-demo:local`) gerem novos pods. Deploy sem queda (RollingUpdate). |

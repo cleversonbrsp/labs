@@ -1,0 +1,19 @@
+# Cluster Kind para o Lab 03 (Connect + Config Server).
+# 3 nós, portas 80/443 mapeadas para o Ingress. Use: make rebuild
+#
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: kind
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 8080
+      - containerPort: 443
+        hostPort: 8443
+  - role: worker
+  - role: worker
+networking:
+  disableDefaultCNI: false
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6443

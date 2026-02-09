@@ -1,8 +1,7 @@
 # =============================================================================
 # service.yaml - Service da aplicação portal-demo
 # =============================================================================
-# Expõe a aplicação na porta 9090 dentro do cluster. Acesso via
-# portal-demo.lab-portal.svc.cluster.local:9090 ou port-forward. Path /portal (ex.: /portal/ping).
+# ClusterIP; acesso via Ingress (portal.local/portal) ou port-forward. Ver README.
 # =============================================================================
 apiVersion: v1
 kind: Service

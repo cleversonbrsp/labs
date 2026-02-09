@@ -1,0 +1,27 @@
+# =============================================================================
+# ingress.yaml - Ingress para portal-demo (Lab 03)
+# =============================================================================
+# Requer: NGINX Ingress Controller + MetalLB (make rebuild). O Ingress Controller
+# recebe IP do MetalLB; adicione no /etc/hosts: <IP> portal.local
+# Acesso: http://portal.local/portal e http://portal.local/portal/ping
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portal-demo
+  namespace: lab-portal
+  labels:
+    app: portal-demo
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: portal.local
+      http:
+        paths:
+          - path: /portal
+            pathType: Prefix
+            backend:
+              service:
+                name: portal-demo
+                port:
+                  number: 9090
