@@ -6,8 +6,8 @@
 # O rollout restart garante novos pods com a imagem recém-carregada (mesma tag);
 # RollingUpdate padrão = sem queda (zero downtime). Roda em self-hosted
 # para que kubectl e kind executem na máquina onde o cluster Kind está; assim
-# o deploy vai para o SEU cluster (ex.: dev-cluster). NAMESPACE=lab-portal;
-# IMAGE_NAME=portal-demo:local. KIND_CLUSTER_NAME = nome do seu cluster (ex.: dev-cluster).
+# o deploy vai para o SEU cluster. NAMESPACE=lab-portal; IMAGE_NAME=portal-demo:local.
+# KIND_CLUSTER_NAME = nome do cluster (make rebuild no lab 03 cria cluster "kind").
 # Conceitos (Config Server, tcpSocket, probes): ver 03 - nvt-cnt/README.md seção 7
 # =============================================================================
 name: Connect Kind (build + deploy)
@@ -23,8 +23,8 @@ on:
 env:
   NAMESPACE: lab-portal
   IMAGE_NAME: portal-demo:local
-  # Nome do cluster Kind (kubectl config current-context = kind-<KIND_CLUSTER_NAME>)
-  KIND_CLUSTER_NAME: dev-cluster
+  # Nome do cluster Kind (Makefile do lab 03 usa CLUSTER_NAME=kind)
+  KIND_CLUSTER_NAME: kind
 
 jobs:
   build-and-deploy:
